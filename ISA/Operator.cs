@@ -1,6 +1,6 @@
 ﻿namespace ISA
 {
-    public enum Operand
+    public enum Operator
     {
         MOV,
         LOAD,
@@ -13,3 +13,4 @@
         CMP
     }
 }
+   
