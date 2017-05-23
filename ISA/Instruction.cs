@@ -8,19 +8,28 @@ namespace ISA
 {
     public class Instruction
     {
-        public Operator Operand { get; set; }
-        public Register Register1 { get; set; }
-        public Register Register2 { get; set; }
-        public Register Register3 { get; set; }
+        public Operator Operator { get; set; }
+        public Register DestinationRegister { get; set; }
+        public Register SourceRegister { get; set; }
+        public Register ValueRegister { get; set; }
         public int Value { get; set; }
 
-        public Instruction(Operator operand, Register register1, Register register2 = null, Register register3 = null, int value = 0)
+        public Instruction() : base()
         {
-            Operand = operand;
-            Register1 = register1;
-            Register2 = register2;
-            Register3 = register3;
+
+        }
+
+        public Instruction(Operator operand, Register dest, Register source = null, Register valueR = null, int value = 0)
+        {
+            Operator = operand;
+            DestinationRegister = dest;
+            SourceRegister = source;
+            ValueRegister = valueR;
             Value = value;
+        }
+        public override string ToString()
+        {
+            return $"{Operator}->{DestinationRegister},{DestinationRegister.Address}->{SourceRegister},{SourceRegister?.Address ?? ""}->{ValueRegister},{ValueRegister?.Address ?? ""}->{Value}";
         }
     }
 }
