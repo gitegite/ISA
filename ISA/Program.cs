@@ -9,8 +9,8 @@ namespace ISA
     class Program
     {
         static List<Register> _registers = new List<Register>();
-        static List<Instruction> instructionList = new List<Instruction>();
-
+        static List<Instruction> _instructionList = new List<Instruction>();
+        static int _numClockCycle = 0;
         static void Main(string[] args)
         {
             Console.WriteLine("Welcome to ISA");
@@ -21,7 +21,7 @@ namespace ISA
             {
                 input = Console.ReadLine();
                 if (input == "end")
-                    break; 
+                    break;
                 input = input.Replace("r", "R");
                 var instructionSplitted = input.Split(' ').ToList();
                 var opp = instructionSplitted[0];
@@ -67,26 +67,130 @@ namespace ISA
                 //{
                 //    Console.WriteLine(item.Name + ":" + item.Value + ",");
                 //}
-                instructionList.Add(instruction);
+                _instructionList.Add(instruction);
 
             } while (input != "end");
             PrintInstructions();
+            PrintRegistersValue();
+            PrintCPI();
+            PrintExecution();
             Console.ReadLine();
         }
 
-
-        private static void PrintInstructions()
+        private static void PrintExecution()
         {
-            
-            Console.WriteLine("PC\tInstrctions\t\t\t\t\tClock Cycle");
-            instructionList.ForEach(x => {
+            var tabAmount = 1;
+            Func<string, int, string> increaseTab = (x, amount) => { return x.PadLeft(amount, '\t'); };
 
-                if(x.)
-                Console.WriteLine($"PC[{instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister?.Name ?? x.Value.ToString() } {x.DestinationRegister.Address} {x.SourceRegister?.Address ?? "".PadLeft(5,'0')} {Convert.ToString(x.Value,2).PadLeft(16,'0')}");
+            FindRAW();
 
+            PrintPipelineHeader();
+            _instructionList.ForEach(x =>
+            {
+                var stage = increaseTab("\t", tabAmount);
+                foreach (var item in x.Stage)
+                {
+                    stage += item + "\t";
+                }
+                Console.WriteLine($"{_instructionList.IndexOf(x) + 1}.\t {x}{stage}");
+                tabAmount++;
             });
         }
 
+        private static void FindRAW()
+        {
+
+            foreach (var currentInstruction in _instructionList.Skip(1).ToList())
+            {
+                var prevInstruction = _instructionList[_instructionList.IndexOf(currentInstruction) - 1];
+                if (currentInstruction.SourceRegister != null && prevInstruction.DestinationRegister.Name == currentInstruction.SourceRegister.Name)
+                {
+                    //stall
+                    if(prevInstruction.Operator == Operator.MOV)
+                    {
+                        currentInstruction.Stage.Insert(2, "ST");
+
+                    }
+                    //forwarding
+                    else
+                    {
+
+                    }
+                }
+            }
+
+        }
+
+        private static void PrintPipelineHeader(int numStall = 0)
+        {
+            _numClockCycle = 5 + _instructionList.Count - 1 + numStall;
+            var header = "No.\tInstruction\t";
+            for (int i = 0; i < _numClockCycle; i++)
+            {
+                header += (i + 1) + "\t";
+            }
+            Console.WriteLine(header);
+        }
+
+        private static void PrintCPI()
+        {
+            decimal cpi = _instructionList.Sum(x => Convert.ToDecimal(GetClockCycle(x.Operator))) / Convert.ToDecimal(_instructionList.Count);
+            Console.WriteLine($"CPI = {cpi}");
+        }
+
+        private static void PrintInstructions()
+        {
+
+            Console.WriteLine("PC\tInstrctions\t\t\t\t\tClock Cycle");
+            _instructionList.ForEach(x =>
+            {
+
+                //add r1 10
+                if (x.SourceRegister == null)
+                {
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }=> {x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t\t" + GetClockCycle(x.Operator));
+
+                }
+                //add r1 r2
+                //add r1 r2 r3
+                else
+                {
+                    var val = x.ValueRegister?.Name ?? x.Value.ToString();
+                    if (val != "0")
+                    {
+                        val = " " + val + " ";
+                    }
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}=> {x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                }
+            });
+        }
+        private static void PrintRegistersValue()
+        {
+            _registers.ForEach(x =>
+            {
+                Console.WriteLine($"{x.Name}--> {x.Value} [{Convert.ToString(x.Value, 2).PadLeft(16, '0')}]");
+            });
+
+        }
+        private static string GetClockCycle(Operator op)
+        {
+            switch (op)
+            {
+                case Operator.MOV:
+                    return "1";
+
+                case Operator.ADD:
+                    return "2";
+                case Operator.SUB:
+                    return "2";
+                case Operator.MUL:
+                    return "3";
+                case Operator.DIV:
+                    return "5";
+                default:
+                    return "";
+            }
+        }
         private static void Multiply(Instruction instruction)
         {
             if (!IsExistedInRegistersPool(instruction.DestinationRegister))

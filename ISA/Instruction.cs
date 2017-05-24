@@ -13,6 +13,7 @@ namespace ISA
         public Register SourceRegister { get; set; }
         public Register ValueRegister { get; set; }
         public int Value { get; set; }
+        public List<string> Stage { get; set; }
 
         public Instruction() : base()
         {
@@ -26,10 +27,15 @@ namespace ISA
             SourceRegister = source;
             ValueRegister = valueR;
             Value = value;
+            Stage = new List<string> { "IF", "ID", "EX", "MEM", "WB" };
         }
         public override string ToString()
         {
-            return $"{Operator}->{DestinationRegister},{DestinationRegister.Address}->{SourceRegister},{SourceRegister?.Address ?? ""}->{ValueRegister},{ValueRegister?.Address ?? ""}->{Value}";
+            if (SourceRegister != null)
+                return $"{Operator} {DestinationRegister} {SourceRegister} {ValueRegister?.Name ?? Value.ToString()}";
+            else
+                return $"{Operator} {DestinationRegister} {Value}";
+
         }
     }
 }
