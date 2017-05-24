@@ -16,9 +16,8 @@ namespace ISA
             //mov r0 5
             //mov r1 6
             //add r0 r1
-            //sub r1 r0 100
-            //mov r2 94
-            //mul r1 r2
+            //add r1 r0 10
+            //mov r2 2
             //end
             Console.WriteLine("Welcome to ISA");
             Console.WriteLine("===================================================");
@@ -30,6 +29,7 @@ namespace ISA
             Console.WriteLine("--- MOV r1 3");
             Console.WriteLine("--- ADD r0 r1 10");
             Console.WriteLine("(Type 'end' to exit the program.)");
+            Console.WriteLine();
             var input = "";
 
             do
