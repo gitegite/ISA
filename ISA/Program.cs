@@ -13,8 +13,23 @@ namespace ISA
         static int _numClockCycle = 0;
         static void Main(string[] args)
         {
+            //mov r0 5
+            //mov r1 6
+            //add r0 r1
+            //sub r1 r0 100
+            //mov r2 94
+            //mul r1 r2
+            //end
             Console.WriteLine("Welcome to ISA");
-            Console.WriteLine("----------------------------------------------");
+            Console.WriteLine("===================================================");
+            Console.WriteLine("This is a 32 bits ISA which accept at most 3 operands.");
+            Console.WriteLine();
+            Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV.");
+            Console.WriteLine();
+            Console.WriteLine("Try MOV r0 5");
+            Console.WriteLine("--- MOV r1 3");
+            Console.WriteLine("--- ADD r0 r1 10");
+            Console.WriteLine("(Type 'end' to exit the program.)");
             var input = "";
 
             do
@@ -70,9 +85,20 @@ namespace ISA
                 _instructionList.Add(instruction);
 
             } while (input != "end");
+            Console.WriteLine();
+            Console.WriteLine("Instructions");
+            Console.WriteLine("===================================================");
+            Console.WriteLine();
             PrintInstructions();
-            PrintRegistersValue();
             PrintCPI();
+            Console.WriteLine();
+            Console.WriteLine("Registers Value");
+            Console.WriteLine("===================================================");
+            Console.WriteLine();
+            PrintRegistersValue();
+            Console.WriteLine();
+            Console.WriteLine("Execution");
+            Console.WriteLine("===================================================");
             PrintExecution();
             Console.ReadLine();
         }
@@ -95,11 +121,12 @@ namespace ISA
                 Console.WriteLine($"{_instructionList.IndexOf(x) + 1}.\t {x}{stage}");
                 tabAmount++;
             });
-
+            Console.WriteLine();
             rawList.ForEach(x =>
             {
                 Console.WriteLine(x);
             });
+           
         }
 
         private static List<string> FindRAW()
@@ -126,12 +153,12 @@ namespace ISA
                             var nextnextInstruction = _instructionList[index + 2];
                             nextnextInstruction.Stage.Insert(0, "ST");
                         }
-                        rawList.Add($"RAW at {prevInstruction.DestinationRegister} and {currentInstruction.SourceRegister}, solved by stalling");
+                        rawList.Add($"RAW at instruction {_instructionList.IndexOf(prevInstruction) + 1} and {_instructionList.IndexOf(currentInstruction) + 1} for {currentInstruction.SourceRegister}, solved by stalling");
                     }
                     //forwarding
                     else
                     {
-
+                        rawList.Add($"RAW at instruction {_instructionList.IndexOf(prevInstruction) + 1} and {_instructionList.IndexOf(currentInstruction) + 1} for {prevInstruction.DestinationRegister}, solved by forwarding");
                     }
                 }
             }
@@ -159,14 +186,14 @@ namespace ISA
         private static void PrintInstructions()
         {
 
-            Console.WriteLine("PC\tInstrctions\t\t\t\t\tClock Cycle");
+            Console.WriteLine("PC\tInstructions\t\t\t\t\tClock Cycle");
             _instructionList.ForEach(x =>
             {
 
                 //add r1 10
                 if (x.SourceRegister == null)
                 {
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }=> {x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t\t" + GetClockCycle(x.Operator));
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }\t{x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
 
                 }
                 //add r1 r2
@@ -176,9 +203,9 @@ namespace ISA
                     var val = x.ValueRegister?.Name ?? x.Value.ToString();
                     if (val != "0")
                     {
-                        val = " " + val + " ";
+                        val = " " + val;
                     }
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}=> {x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}\t{x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
                 }
             });
         }
@@ -186,7 +213,7 @@ namespace ISA
         {
             _registers.ForEach(x =>
             {
-                Console.WriteLine($"{x.Name}--> {x.Value} [{Convert.ToString(x.Value, 2).PadLeft(16, '0')}]");
+                Console.WriteLine($"{x.Name} --> {x.Value}\t[{Convert.ToString(x.Value, 2).PadLeft(16, '0')}]");
             });
 
         }
