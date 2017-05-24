@@ -186,14 +186,14 @@ namespace ISA
         private static void PrintInstructions()
         {
 
-            Console.WriteLine("PC\tInstructions\t\t\t\t\tClock Cycle");
+            Console.WriteLine("PC\tInstructions\t\t\t\t\t\tClock Cycle");
             _instructionList.ForEach(x =>
             {
 
                 //add r1 10
                 if (x.SourceRegister == null)
                 {
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }\t{x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }\t{GetOpCode(x.Operator)} {x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
 
                 }
                 //add r1 r2
@@ -205,7 +205,7 @@ namespace ISA
                     {
                         val = " " + val;
                     }
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}\t{x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}\t{GetOpCode(x.Operator)} {x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
                 }
             });
         }
@@ -232,6 +232,25 @@ namespace ISA
                     return "3";
                 case Operator.DIV:
                     return "5";
+                default:
+                    return "";
+            }
+        }
+        private static string GetOpCode(Operator op)
+        {
+            switch (op)
+            {
+                case Operator.MOV:
+                    return Convert.ToString(1,2).PadLeft(6,'0');
+
+                case Operator.ADD:
+                    return Convert.ToString(2, 2).PadLeft(6, '0');
+                case Operator.SUB:
+                    return Convert.ToString(2, 2).PadLeft(6, '0');
+                case Operator.MUL:
+                    return Convert.ToString(3, 2).PadLeft(6, '0');
+                case Operator.DIV:
+                    return Convert.ToString(5, 2).PadLeft(6, '0');
                 default:
                     return "";
             }
