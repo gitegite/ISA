@@ -82,9 +82,9 @@ namespace ISA
             var tabAmount = 1;
             Func<string, int, string> increaseTab = (x, amount) => { return x.PadLeft(amount, '\t'); };
 
-            FindRAW();
-
-            PrintPipelineHeader();
+            var rawList = FindRAW();
+            var numStall = rawList.Where(x => x.Contains("stalling")).Count();
+            PrintPipelineHeader(numStall);
             _instructionList.ForEach(x =>
             {
                 var stage = increaseTab("\t", tabAmount);
@@ -95,21 +95,38 @@ namespace ISA
                 Console.WriteLine($"{_instructionList.IndexOf(x) + 1}.\t {x}{stage}");
                 tabAmount++;
             });
+
+            rawList.ForEach(x =>
+            {
+                Console.WriteLine(x);
+            });
         }
 
-        private static void FindRAW()
+        private static List<string> FindRAW()
         {
-
+            List<string> rawList = new List<string>();
             foreach (var currentInstruction in _instructionList.Skip(1).ToList())
             {
                 var prevInstruction = _instructionList[_instructionList.IndexOf(currentInstruction) - 1];
                 if (currentInstruction.SourceRegister != null && prevInstruction.DestinationRegister.Name == currentInstruction.SourceRegister.Name)
                 {
                     //stall
-                    if(prevInstruction.Operator == Operator.MOV)
+                    if (prevInstruction.Operator == Operator.MOV)
                     {
                         currentInstruction.Stage.Insert(2, "ST");
+                        var index = _instructionList.IndexOf(currentInstruction);
 
+                        if (index + 1 < _instructionList.Count)
+                        {
+                            var nextInstruction = _instructionList[index + 1];
+                            nextInstruction.Stage.Insert(1, "ST");
+                        }
+                        if (index + 2 < _instructionList.Count)
+                        {
+                            var nextnextInstruction = _instructionList[index + 2];
+                            nextnextInstruction.Stage.Insert(0, "ST");
+                        }
+                        rawList.Add($"RAW at {prevInstruction.DestinationRegister} and {currentInstruction.SourceRegister}, solved by stalling");
                     }
                     //forwarding
                     else
@@ -118,6 +135,7 @@ namespace ISA
                     }
                 }
             }
+            return rawList;
 
         }
 
