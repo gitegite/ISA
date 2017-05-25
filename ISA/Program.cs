@@ -12,6 +12,7 @@ namespace ISA
         static List<Instruction> _instructionList = new List<Instruction>();
         static List<string> _stepByStepList = new List<string>();
         static int _numClockCycle = 0;
+        static List<Memory> _memoryList = new List<Memory>();
         static void Main(string[] args)
         {
             //mov r0 5
@@ -20,11 +21,18 @@ namespace ISA
             //add r1 r0 10
             //mov r2 2
             //end
+
+            for (int i = 0; i < 32; i++)
+            {
+                _memoryList.Add(new Memory($"R{i}"));
+            }
+
+            Console.WindowWidth = Console.LargestWindowWidth;
             Console.WriteLine("Welcome to ISA");
             Console.WriteLine("===================================================");
             Console.WriteLine("This is a 32 bits ISA which accept at most 3 operands.");
             Console.WriteLine();
-            Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV.");
+            Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV LOAD.");
             Console.WriteLine();
             Console.WriteLine("Try MOV r0 5");
             Console.WriteLine("--- MOV r1 3");
@@ -45,6 +53,13 @@ namespace ISA
                 var count = instructionSplitted.Count;
                 Register destinationR = new Register(instructionSplitted[1], 0);
                 Instruction instruction = new Instruction();
+
+                if (op == Operator.LOAD)
+                {
+                    var memory = instructionSplitted[2];
+
+                    instruction = new Instruction(op, destinationR);
+                }
 
                 //add r1 r2
                 //add r1 100
@@ -127,7 +142,7 @@ namespace ISA
             {
                 Console.WriteLine(x);
             });
-           
+
         }
 
         private static List<string> FindRAW()
@@ -212,9 +227,9 @@ namespace ISA
         }
         private static void PrintRegistersValue()
         {
-            _registers.ForEach(x =>
+            _stepByStepList.ForEach(x =>
             {
-                Console.WriteLine($"{x.Name} --> {x.Value}\t[{Convert.ToString(x.Value, 2).PadLeft(16, '0')}]");
+                Console.WriteLine($"{_stepByStepList.IndexOf(x) + 1}\t{x}");
             });
 
         }
@@ -242,7 +257,7 @@ namespace ISA
             switch (op)
             {
                 case Operator.MOV:
-                    return Convert.ToString(1,2).PadLeft(6,'0');
+                    return Convert.ToString(1, 2).PadLeft(6, '0');
 
                 case Operator.ADD:
                     return Convert.ToString(2, 2).PadLeft(6, '0');
@@ -284,7 +299,7 @@ namespace ISA
                     destR.Value *= sourceR.Value + instruction.Value;
                 }
             }
-                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+            _stepByStepList.Add($"{destR}:RM\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
 
         }
 
@@ -316,7 +331,7 @@ namespace ISA
                     destR.Value /= sourceR.Value + instruction.Value;
                 }
             }
-                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+            _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
 
         }
 
@@ -348,7 +363,7 @@ namespace ISA
                     destR.Value += sourceR.Value + instruction.Value;
                 }
             }
-                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+            _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
 
         }
         private static void Move(ref Instruction instruction)
@@ -368,9 +383,39 @@ namespace ISA
                 var sourceR = GetRegister(instruction.SourceRegister.Name);
                 destR.Value = sourceR == null ? destR.Value : sourceR.Value;
             }
-            _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+            _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
         }
+        private static void Sub(Instruction instruction)
+        {
+            if (!IsExistedInRegistersPool(instruction.DestinationRegister))
+            {
+                _registers.Add(instruction.DestinationRegister);
+            }
+            var destR = GetRegister(instruction.DestinationRegister.Name);
 
+            //add r1 10
+            if (instruction.SourceRegister == null)
+            {
+                destR.Value -= instruction.Value;
+            }
+            else
+            {
+                var sourceR = GetRegister(instruction.SourceRegister.Name);
+                //add r1 r2 r3
+                if (instruction.ValueRegister != null)
+                {
+                    var valueR = GetRegister(instruction.ValueRegister.Name);
+                    destR.Value -= sourceR.Value + valueR.Value;
+                }
+                //add r1 r2 10
+                else
+                {
+                    destR.Value -= sourceR.Value + instruction.Value;
+                }
+            }
+            _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
+
+        }
         private static bool IsExistedInRegistersPool(Register register)
         {
             return _registers.Any(x => x.Name == register.Name);
@@ -416,6 +461,8 @@ namespace ISA
                     return Operator.STORE;
                 case "load":
                     return Operator.LOAD;
+                case "div":
+                    return Operator.DIV;
             }
             return Operator.JMP;
         }
@@ -451,34 +498,6 @@ namespace ISA
             }
         }
 
-        private static void Sub(Instruction instruction)
-        {
-            if (!IsExistedInRegistersPool(instruction.DestinationRegister))
-            {
-                _registers.Add(instruction.DestinationRegister);
-            }
-            var destR = GetRegister(instruction.DestinationRegister.Name);
 
-            //add r1 10
-            if (instruction.SourceRegister == null)
-            {
-                destR.Value -= instruction.Value;
-            }
-            else
-            {
-                var sourceR = GetRegister(instruction.SourceRegister.Name);
-                //add r1 r2 r3
-                if (instruction.ValueRegister != null)
-                {
-                    var valueR = GetRegister(instruction.ValueRegister.Name);
-                    destR.Value -= sourceR.Value + valueR.Value;
-                }
-                //add r1 r2 10
-                else
-                {
-                    destR.Value -= sourceR.Value + instruction.Value;
-                }
-            }
-        }
     }
 }

@@ -13,6 +13,7 @@ namespace ISA
         public Register SourceRegister { get; set; }
         public Register ValueRegister { get; set; }
         public int Value { get; set; }
+        public Memory Memory { get; set; }
         public List<string> Stage { get; set; }
 
         public Instruction() : base()
@@ -20,8 +21,9 @@ namespace ISA
 
         }
 
-        public Instruction(Operator operand, Register dest, Register source = null, Register valueR = null, int value = 0)
+        public Instruction(Operator operand, Register dest, Register source = null, Register valueR = null, int value = 0,Memory memory = null)
         {
+            Memory = memory;
             Operator = operand;
             DestinationRegister = dest;
             SourceRegister = source;
