@@ -10,6 +10,7 @@ namespace ISA
     {
         static List<Register> _registers = new List<Register>();
         static List<Instruction> _instructionList = new List<Instruction>();
+        static List<string> _stepByStepList = new List<string>();
         static int _numClockCycle = 0;
         static void Main(string[] args)
         {
@@ -283,6 +284,8 @@ namespace ISA
                     destR.Value *= sourceR.Value + instruction.Value;
                 }
             }
+                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+
         }
 
         private static void Divide(Instruction instruction)
@@ -313,6 +316,8 @@ namespace ISA
                     destR.Value /= sourceR.Value + instruction.Value;
                 }
             }
+                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+
         }
 
         private static void Add(Instruction instruction)
@@ -343,6 +348,8 @@ namespace ISA
                     destR.Value += sourceR.Value + instruction.Value;
                 }
             }
+                        _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
+
         }
         private static void Move(ref Instruction instruction)
         {
@@ -361,6 +368,7 @@ namespace ISA
                 var sourceR = GetRegister(instruction.SourceRegister.Name);
                 destR.Value = sourceR == null ? destR.Value : sourceR.Value;
             }
+            _stepByStepList.Add($"{destR}\t[{Convert.ToString(destR.Value,2).PadLeft(16,'0')}]")
         }
 
         private static bool IsExistedInRegistersPool(Register register)
