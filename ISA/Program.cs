@@ -54,40 +54,46 @@ namespace ISA
                 Register destinationR = new Register(instructionSplitted[1], 0);
                 Instruction instruction = new Instruction();
 
+                // load r1 0(r2)
                 if (op == Operator.LOAD)
                 {
-                    var memory = instructionSplitted[2];
-
-                    instruction = new Instruction(op, destinationR);
+                    var x = instructionSplitted[2];
+                    var memoryName = x.Substring(x.IndexOf('(')).Replace(")", "");
+                    var memory = _memoryList.Single(m => m.Name == memoryName);
+                    var i = Convert.ToInt32(x.Replace(memoryName, "").Replace("(", "").Replace(")", ""));
+                    instruction = new Instruction(op, destinationR, value: memory.Values[i], memory: memory);
                 }
-
-                //add r1 r2
-                //add r1 100
-                if (count == 3)
+                else
                 {
-                    if (instructionSplitted[2].Contains('R'))
+
+                    //add r1 r2
+                    //add r1 100
+                    if (count == 3)
+                    {
+                        if (instructionSplitted[2].Contains('R'))
+                        {
+                            Register sourceR = new Register(instructionSplitted[2], 0);
+                            instruction = new Instruction(op, destinationR, sourceR);
+                        }
+                        else
+                        {
+                            instruction = new Instruction(op, destinationR, value: Convert.ToInt32(instructionSplitted[2]));
+                        }
+                    }
+                    //add r1 r2 r3
+                    //add r1 r2 100
+                    if (count == 4)
                     {
                         Register sourceR = new Register(instructionSplitted[2], 0);
-                        instruction = new Instruction(op, destinationR, sourceR);
-                    }
-                    else
-                    {
-                        instruction = new Instruction(op, destinationR, value: Convert.ToInt32(instructionSplitted[2]));
-                    }
-                }
-                //add r1 r2 r3
-                //add r1 r2 100
-                if (count == 4)
-                {
-                    Register sourceR = new Register(instructionSplitted[2], 0);
-                    if (instructionSplitted[3].Contains('R'))
-                    {
-                        Register valueR = new Register(instructionSplitted[3], 0);
-                        instruction = new Instruction(op, destinationR, sourceR, valueR);
-                    }
-                    else
-                    {
-                        instruction = new Instruction(op, destinationR, sourceR, value: Convert.ToInt32(instructionSplitted[3]));
+                        if (instructionSplitted[3].Contains('R'))
+                        {
+                            Register valueR = new Register(instructionSplitted[3], 0);
+                            instruction = new Instruction(op, destinationR, sourceR, valueR);
+                        }
+                        else
+                        {
+                            instruction = new Instruction(op, destinationR, sourceR, value: Convert.ToInt32(instructionSplitted[3]));
+                        }
                     }
                 }
 
@@ -239,7 +245,8 @@ namespace ISA
             {
                 case Operator.MOV:
                     return "1";
-
+                case Operator.LOAD:
+                    return "1";
                 case Operator.ADD:
                     return "2";
                 case Operator.SUB:
@@ -385,6 +392,18 @@ namespace ISA
             }
             _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
         }
+
+        private static void Load(Instruction instruction)
+        {
+            if (!IsExistedInRegistersPool(instruction.DestinationRegister))
+            {
+                _registers.Add(instruction.DestinationRegister);
+            }
+            var destR = GetRegister(instruction.DestinationRegister.Name);
+            destR.Value = instruction.Value;
+            _stepByStepList.Add($"{destR}\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
+
+        }
         private static void Sub(Instruction instruction)
         {
             if (!IsExistedInRegistersPool(instruction.DestinationRegister))
@@ -474,6 +493,7 @@ namespace ISA
                     Move(ref instruction);
                     break;
                 case Operator.LOAD:
+                    Load(instruction);
                     break;
                 case Operator.STORE:
                     break;
@@ -497,7 +517,6 @@ namespace ISA
                     break;
             }
         }
-
 
     }
 }
