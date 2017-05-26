@@ -33,8 +33,11 @@ namespace ISA
         }
         public override string ToString()
         {
+            var value = Value == 0 ? "" : Value.ToString();
             if (SourceRegister != null)
-                return $"{Operator} {DestinationRegister} {SourceRegister} {ValueRegister?.Name ?? Value.ToString()}";
+                return $"{Operator} {DestinationRegister} {SourceRegister} {ValueRegister?.Name ?? value}";
+            else if(Memory != null)
+                return $"{Operator} {DestinationRegister} {Memory}";
             else
                 return $"{Operator} {DestinationRegister} {Value}";
 

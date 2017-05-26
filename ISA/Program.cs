@@ -21,26 +21,26 @@ namespace ISA
             //add r1 r0 10
             //mov r2 2
             //end
-
-            for (int i = 0; i < 32; i++)
-            {
-                _memoryList.Add(new Memory($"R{i}"));
-            }
-
+           
             Console.WindowWidth = Console.LargestWindowWidth;
             Console.WriteLine("Welcome to ISA");
             Console.WriteLine("===================================================");
             Console.WriteLine("This is a 32 bits ISA which accept at most 3 operands.");
             Console.WriteLine();
+            Console.WriteLine("Please specify memory value");
+            var memValue = Convert.ToInt32(Console.ReadLine());
+            for (int i = 0; i < 32; i++)
+            {
+                _memoryList.Add(new Memory($"R{i}", memValue));
+            }
             Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV LOAD.");
             Console.WriteLine();
-            Console.WriteLine("Try MOV r0 5");
-            Console.WriteLine("--- MOV r1 3");
-            Console.WriteLine("--- ADD r0 r1 10");
+            Console.WriteLine("Try mov r0 5");
+            Console.WriteLine("--- mov r1 3");
+            Console.WriteLine("--- add r0 r1");
             Console.WriteLine("(Type 'end' to exit the program.)");
             Console.WriteLine();
             var input = "";
-
             do
             {
                 input = Console.ReadLine();
@@ -61,7 +61,7 @@ namespace ISA
                     var memoryName = x.Substring(x.IndexOf('(')).Replace(")", "");
                     var memory = _memoryList.Single(m => m.Name == memoryName);
                     var i = Convert.ToInt32(x.Replace(memoryName, "").Replace("(", "").Replace(")", ""));
-                    instruction = new Instruction(op, destinationR, value: memory.Values[i], memory: memory);
+                    instruction = new Instruction(op, destinationR, value: memory.Value, memory: memory);
                 }
                 else
                 {
@@ -70,14 +70,29 @@ namespace ISA
                     //add r1 100
                     if (count == 3)
                     {
-                        if (instructionSplitted[2].Contains('R'))
+                        if (instructionSplitted[2].Contains('R') && !instructionSplitted[2].Contains('('))
                         {
                             Register sourceR = new Register(instructionSplitted[2], 0);
                             instruction = new Instruction(op, destinationR, sourceR);
                         }
                         else
                         {
-                            instruction = new Instruction(op, destinationR, value: Convert.ToInt32(instructionSplitted[2]));
+                            var val = 0;
+                            Memory memory = null;
+                            string secondOperand = instructionSplitted[2];
+                            //memory
+                            if (secondOperand.Contains(")"))
+                            {
+                                var memoryName = secondOperand.Substring(secondOperand.IndexOf('(')+1).Replace(")", "");
+                                memory = _memoryList.Single(m => m.Name == memoryName);
+                                val = memory.Value;
+                            }
+                            //immediate
+                            else
+                            {
+                                val = Convert.ToInt32(secondOperand);
+                            }
+                            instruction = new Instruction(op, destinationR, value: val, memory: memory);
                         }
                     }
                     //add r1 r2 r3
@@ -114,7 +129,7 @@ namespace ISA
             PrintInstructions();
             PrintCPI();
             Console.WriteLine();
-            Console.WriteLine("Registers Value");
+            Console.WriteLine("Registers Value Per Instruction");
             Console.WriteLine("===================================================");
             Console.WriteLine();
             PrintRegistersValue();
@@ -211,11 +226,11 @@ namespace ISA
             Console.WriteLine("PC\tInstructions\t\t\t\t\t\tClock Cycle");
             _instructionList.ForEach(x =>
             {
-
+                
                 //add r1 10
                 if (x.SourceRegister == null)
                 {
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Value.ToString() }\t{GetOpCode(x.Operator)} {x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.Memory?.ToString() ?? x.Value.ToString()}\t{GetOpCode(x.Operator)} {"1"} {x.DestinationRegister.Address} {"".PadLeft(5, '0')} {Convert.ToString(x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
 
                 }
                 //add r1 r2
@@ -227,7 +242,11 @@ namespace ISA
                     {
                         val = " " + val;
                     }
-                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name}{val}\t{GetOpCode(x.Operator)} {x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
+                    else
+                    {
+                        val = "";
+                    }
+                    Console.WriteLine($"PC[{_instructionList.IndexOf(x)}]->\t{x.Operator} {x.DestinationRegister} {x.SourceRegister.Name} {val}\t{GetOpCode(x.Operator)} {"0"} {x.DestinationRegister.Address} {x.SourceRegister.Address} {Convert.ToString(x.ValueRegister?.Value ?? x.Value, 2).PadLeft(16, '0')}" + "\t\t" + GetClockCycle(x.Operator));
                 }
             });
         }
@@ -261,19 +280,20 @@ namespace ISA
         }
         private static string GetOpCode(Operator op)
         {
+            var bit = 5;
             switch (op)
             {
                 case Operator.MOV:
-                    return Convert.ToString(1, 2).PadLeft(6, '0');
+                    return Convert.ToString(1, 2).PadLeft(bit, '0');
 
                 case Operator.ADD:
-                    return Convert.ToString(2, 2).PadLeft(6, '0');
+                    return Convert.ToString(2, 2).PadLeft(bit, '0');
                 case Operator.SUB:
-                    return Convert.ToString(2, 2).PadLeft(6, '0');
+                    return Convert.ToString(2, 2).PadLeft(bit, '0');
                 case Operator.MUL:
-                    return Convert.ToString(3, 2).PadLeft(6, '0');
+                    return Convert.ToString(3, 2).PadLeft(bit, '0');
                 case Operator.DIV:
-                    return Convert.ToString(5, 2).PadLeft(6, '0');
+                    return Convert.ToString(5, 2).PadLeft(bit, '0');
                 default:
                     return "";
             }
@@ -306,7 +326,7 @@ namespace ISA
                     destR.Value *= sourceR.Value + instruction.Value;
                 }
             }
-            _stepByStepList.Add($"{destR}:RM\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(16, '0')}]");
+            _stepByStepList.Add($"{destR}:RM\t{destR.Value}\t[{Convert.ToString(destR.Value, 2).PadLeft(32, '0')}]");
 
         }
 
@@ -383,7 +403,14 @@ namespace ISA
             var destR = GetRegister(instruction.DestinationRegister.Name);
             if (instruction.SourceRegister == null)
             {
-                destR.Value = instruction.Value;
+                if (instruction.Memory != null)
+                {
+                    destR.Value = instruction.Memory.Value;
+                }
+                else
+                {
+                    destR.Value = instruction.Value;
+                }
             }
             else
             {

@@ -4,16 +4,23 @@ namespace ISA
 {
     public class Memory
     {
-        public int[] Values { get; set; }
+        public int Value { get; set; }
         public string Name { get; set; }
+
         public Memory()
         {
-            Values = Enumerable.Repeat<int>(5, 1000).ToArray();
+
         }
-        public Memory(string name)
+
+        public Memory(string name,int value)
         {
-            Values = Enumerable.Repeat<int>(5, 1000).ToArray();
+            //Values = Enumerable.Repeat<int>(5, 1000).ToArray();
+            Value = value;
             Name = name;
+        }
+        public override string ToString()
+        {
+            return $"({Name})";
         }
     }
 }
