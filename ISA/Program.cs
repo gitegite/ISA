@@ -33,7 +33,8 @@ namespace ISA
             {
                 _memoryList.Add(new Memory($"R{i}", memValue));
             }
-            Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV LOAD.");
+            Console.WriteLine();
+            Console.WriteLine("The supported operations are MOV ADD SUB MUL DIV.");
             Console.WriteLine();
             Console.WriteLine("Try mov r0 5");
             Console.WriteLine("--- mov r1 3");
